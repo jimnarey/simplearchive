@@ -8,7 +8,7 @@ import tarfile
 import gzip
 import bz2
 import lzma
-from typing import IO, Optional
+from typing import IO, Optional, Union, Callable
 
 import py7zr
 
@@ -29,74 +29,6 @@ def all_files(path: str) -> list[pathlib.Path]:
 
 
 archives = all_files(FIXTURES)
-
-
-def open_as_zip(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
-    try:
-        zipf = zipfile.ZipFile(fileobj)
-    except zipfile.BadZipFile:
-        return None
-    return zipf
-
-
-def open_as_tar(fileobj: IO[bytes]) -> Optional[tarfile.TarFile]:
-    try:
-        tarf = tarfile.open(fileobj=fileobj)
-    except tarfile.ReadError:
-        return None
-    return tarf
-
-
-def open_as_gzip(fileobj: IO[bytes]) -> Optional[gzip.GzipFile]:
-    try:
-        gzipf = gzip.open(fileobj)
-        gzipf.peek(32)
-    except gzip.BadGzipFile:
-        return None
-    return gzipf
-
-
-def open_as_bz2(fileobj: IO[bytes]) -> Optional[bz2.BZ2File]:
-    try:
-        bz2f = bz2.open(fileobj)
-        bz2f.peek(32)  # type: ignore
-    except OSError:
-        return None
-    return bz2f
-
-
-def open_as_lzma(fileobj: IO[bytes]) -> Optional[lzma.LZMAFile]:
-    try:
-        lzmaf = lzma.open(fileobj)
-        lzmaf.peek(32)
-    except lzma.LZMAError:
-        return None
-    return lzmaf
-
-
-def open_as_tar_7z(fileobj: IO[bytes]) -> Optional[tarfile.TarFile]:
-    try:
-        szf = py7zr.SevenZipFile(fileobj)  # type: ignore
-    except py7zr.Bad7zFile:
-        return None
-    if len(szf.files) == 1:
-        if fileobjs := szf.read(targets=[szf.files[0].filename]):
-            sz_tar_fobj = tuple(fileobjs.values())[0]
-            return open_as_tar(sz_tar_fobj)
-    return None
-
-
-def open_as_7z(fileobj: IO[bytes]) -> Optional[py7zr.SevenZipFile]:
-    try:
-        szf = py7zr.SevenZipFile(fileobj)  # type: ignore
-    except py7zr.Bad7zFile:
-        return None
-    return szf
-
-# for archive in archives:
-#     with open(archive, 'rb') as arch_file:
-#         open_as_tar(arch_file)
-
 
 SUPPORTED_TARS = ['file.tar.bz2', 'file.tar.gz', 'file.tar.xz']
 
