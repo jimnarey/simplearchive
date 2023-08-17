@@ -9,6 +9,7 @@ from archive import archive
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURES_DIR = os.path.join(SCRIPT_DIR, 'fixtures')
 
+
 class TestArchive(unittest.TestCase):
 
     def test_open_as_zip_with_zip_file(self):
