@@ -42,8 +42,7 @@ def open_as_zip(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
 def open_as_tar(fileobj: IO[bytes]) -> Optional[tarfile.TarFile]:
     try:
         tarf = tarfile.open(fileobj=fileobj)
-    except Exception as e:
-        print(e)
+    except tarfile.ReadError:
         return None
     return tarf
 
@@ -52,8 +51,7 @@ def open_as_gzip(fileobj: IO[bytes]) -> Optional[gzip.GzipFile]:
     try:
         gzipf = gzip.open(fileobj)
         gzipf.peek(32)
-    except Exception as e:
-        print(type(e))
+    except gzip.BadGzipFile:
         return None
     return gzipf
 
@@ -61,11 +59,39 @@ def open_as_gzip(fileobj: IO[bytes]) -> Optional[gzip.GzipFile]:
 def open_as_bz2(fileobj: IO[bytes]) -> Optional[bz2.BZ2File]:
     try:
         bz2f = bz2.open(fileobj)
-        bz2f.peek(32)
-    except Exception as e:
-        print(type(e))
+        bz2f.peek(32)  # type: ignore
+    except OSError:
         return None
     return bz2f
+
+
+def open_as_lzma(fileobj: IO[bytes]) -> Optional[lzma.LZMAFile]:
+    try:
+        lzmaf = lzma.open(fileobj)
+        lzmaf.peek(32)
+    except lzma.LZMAError:
+        return None
+    return lzmaf
+
+
+def open_as_tar_7z(fileobj: IO[bytes]) -> Optional[tarfile.TarFile]:
+    try:
+        szf = py7zr.SevenZipFile(fileobj)  # type: ignore
+    except py7zr.Bad7zFile:
+        return None
+    if len(szf.files) == 1:
+        if fileobjs := szf.read(targets=[szf.files[0].filename]):
+            sz_tar_fobj = tuple(fileobjs.values())[0]
+            return open_as_tar(sz_tar_fobj)
+    return None
+
+
+def open_as_7z(fileobj: IO[bytes]) -> Optional[py7zr.SevenZipFile]:
+    try:
+        szf = py7zr.SevenZipFile(fileobj)  # type: ignore
+    except py7zr.Bad7zFile:
+        return None
+    return szf
 
 # for archive in archives:
 #     with open(archive, 'rb') as arch_file:
