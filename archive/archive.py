@@ -8,25 +8,28 @@ import tarfile
 import gzip
 import bz2
 import lzma
-from typing import IO,Optional
+from typing import IO, Optional
 
 import py7zr
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(SCRIPT_DIR, '../tests/fixtures')
-OUT =  os.path.join(SCRIPT_DIR, '../out')
+OUT = os.path.join(SCRIPT_DIR, '../out')
 OUT_FILE = os.path.join(OUT, 'file.txt')
+
 
 def print_file(path):
     with open(path, 'r') as file:
         print(file.read())
 
 
-def all_files(path: str) -> list[str]:
+def all_files(path: str) -> list[pathlib.Path]:
     root_dir = pathlib.Path(path)
     return [item for item in root_dir.rglob('*') if item.is_file()]
 
+
 archives = all_files(FIXTURES)
+
 
 def open_as_zip(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
     try:
@@ -35,7 +38,8 @@ def open_as_zip(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
         return None
     return zipf
 
-def open_as_tar(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
+
+def open_as_tar(fileobj: IO[bytes]) -> Optional[tarfile.TarFile]:
     try:
         tarf = tarfile.open(fileobj=fileobj)
     except Exception as e:
@@ -43,19 +47,21 @@ def open_as_tar(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
         return None
     return tarf
 
-def open_as_gzip(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
+
+def open_as_gzip(fileobj: IO[bytes]) -> Optional[gzip.GzipFile]:
     try:
         gzipf = gzip.open(fileobj)
-        gzipf.peek()
+        gzipf.peek(32)
     except Exception as e:
         print(type(e))
         return None
     return gzipf
 
-def open_as_bz2(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
+
+def open_as_bz2(fileobj: IO[bytes]) -> Optional[bz2.BZ2File]:
     try:
         bz2f = bz2.open(fileobj)
-        bz2f.peek()
+        bz2f.peek(32)
     except Exception as e:
         print(type(e))
         return None
@@ -64,6 +70,7 @@ def open_as_bz2(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
 # for archive in archives:
 #     with open(archive, 'rb') as arch_file:
 #         open_as_tar(arch_file)
+
 
 SUPPORTED_TARS = ['file.tar.bz2', 'file.tar.gz', 'file.tar.xz']
 
