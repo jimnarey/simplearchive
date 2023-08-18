@@ -19,7 +19,7 @@ class ArchiveWrapper(ABC):
         pass
 
     @abstractmethod
-    def list(self, name: str) -> Union[dict[Any, Any], None]:
+    def list(self) -> list[str]:
         pass
 
     @abstractmethod
@@ -37,8 +37,15 @@ class TarArchiveWrapper(ArchiveWrapper):
         self.archive_obj = archive_obj
         self.path = path
 
-    def list(self, name: str) -> Union[dict[Any, Any], None]:
-        pass
+    def list(self) -> list[str]:
+        members = self.archive_obj.getmembers()
+        names = []
+        for member in members:
+            if member.isdir():
+                names.append('{}/'.format(member.name))
+            else:
+                names.append(member.name)
+        return names
 
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         try:
@@ -57,8 +64,8 @@ class ZipArchiveWrapper(ArchiveWrapper):
         self.archive_obj = archive_obj
         self.path = path
 
-    def list(self, name: str) -> Union[dict[Any, Any], None]:
-        pass
+    def list(self) -> list[str]:
+        return self.archive_obj.namelist()
 
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         try:
@@ -77,8 +84,14 @@ class SevenZArchiveWrapper(ArchiveWrapper):
         self.archive_obj = archive_obj
         self.path = path
 
-    def list(self, name: str) -> Union[dict[Any, Any], None]:
-        pass
+    def list(self) -> list[str]:
+        names = []
+        for member in self.archive_obj.list():
+            if member.is_directory:
+                names.append('{}/'.format(member.filename))
+            else:
+                names.append(member.filename)
+        return names
 
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         self.archive_obj.reset()
@@ -97,11 +110,11 @@ class FileUnAwareArchiveWrapper(ArchiveWrapper):
         self.archive_obj = archive_obj
         self.path = path
 
-    def list(self, name: str) -> Union[dict[Any, Any], None]:
-        pass
-
     def _name(self):
         return os.path.splitext(os.path.basename(self.path))[0]
+
+    def list(self) -> list[str]:
+        return [self._name()]
 
     # TODO - return file object if name is given
     def open_by_name(self, name: str):
