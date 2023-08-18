@@ -86,6 +86,7 @@ OPEN_FUNCS = [
     open_as_bz2,
 ]
 
+# TODO - handle rar, handle lzma
 EXTENSIONS = {
     '.tar.7z': open_as_tar_7z,
     '.tar.xz': open_as_tar,
