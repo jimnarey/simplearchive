@@ -19,6 +19,10 @@ class ArchiveWrapper(ABC):
         pass
 
     @abstractmethod
+    def list(self, name: str) -> Union[dict[Any, Any], None]:
+        pass
+
+    @abstractmethod
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         pass
 
@@ -32,6 +36,9 @@ class TarArchiveWrapper(ArchiveWrapper):
     def __init__(self, archive_obj: tarfile.TarFile, path: Path) -> None:
         self.archive_obj = archive_obj
         self.path = path
+
+    def list(self, name: str) -> Union[dict[Any, Any], None]:
+        pass
 
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         try:
@@ -50,6 +57,9 @@ class ZipArchiveWrapper(ArchiveWrapper):
         self.archive_obj = archive_obj
         self.path = path
 
+    def list(self, name: str) -> Union[dict[Any, Any], None]:
+        pass
+
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         try:
             item = {name: self.archive_obj.open(name)}
@@ -66,6 +76,9 @@ class SevenZArchiveWrapper(ArchiveWrapper):
     def __init__(self, archive_obj: py7zr.SevenZipFile, path: Path) -> None:
         self.archive_obj = archive_obj
         self.path = path
+
+    def list(self, name: str) -> Union[dict[Any, Any], None]:
+        pass
 
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         self.archive_obj.reset()
@@ -84,11 +97,15 @@ class FileUnAwareArchiveWrapper(ArchiveWrapper):
         self.archive_obj = archive_obj
         self.path = path
 
+    def list(self, name: str) -> Union[dict[Any, Any], None]:
+        pass
+
     def _name(self):
         return os.path.splitext(os.path.basename(self.path))[0]
 
+    # TODO - return file object if name is given
     def open_by_name(self, name: str):
-        return {self._name(): self.archive_obj}
+        return None
 
     def extract_to(self, path: Path) -> bool:
         return True

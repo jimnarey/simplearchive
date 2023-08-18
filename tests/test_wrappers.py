@@ -97,21 +97,23 @@ class TestSevenZArchiveWrapper(WrapperTestCase):
 
 class TestFileUnawareArchiveWrapper(WrapperTestCase):
 
-    @staticmethod
-    def _get_wrapper(path):
-        fileobj = open(path, 'rb')
-        sevenZ = py7zr.SevenZipFile(fileobj)
-        return SevenZArchiveWrapper(sevenZ, path)
+    def test_open_by_name_gz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.gz')
+        with open(path, 'rb') as fileobj:
+            gz = gzip.open(fileobj)
+            wrapper = FileUnAwareArchiveWrapper(gz, path)
+            self.assertIsNone(wrapper.open_by_name('anything'))
 
-    # def test_open_by_name_gz(self):
-    #     path = pathlib.Path(FIXTURES_DIR, 'file.txt.gz')
-    #     wrapper = self._get_wrapper(path)
-    #     self.assertIsInstance(wrapper.open_by_name(),  )
+    def test_open_by_name_bz2(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.bz2')
+        with open(path, 'rb') as fileobj:
+            bz2obj = bz2.open(fileobj)
+            wrapper = FileUnAwareArchiveWrapper(bz2obj, path)
+            self.assertIsNone(wrapper.open_by_name('anything'))
 
-    # def test_open_by_name_bz2(self):
-    #     path = pathlib.Path(FIXTURES_DIR, 'file.txt.bz2')
-    #     wrapper = self._get_wrapper(path)
-
-    # def test_open_by_name_xz(self):
-    #     path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
-    #     wrapper = self._get_wrapper(path)
+    def test_open_by_name_xz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
+        with open(path, 'rb') as fileobj:
+            xz = gzip.open(fileobj)
+            wrapper = FileUnAwareArchiveWrapper(xz, path)
+            self.assertIsNone(wrapper.open_by_name('anything'))
