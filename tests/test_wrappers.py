@@ -76,6 +76,8 @@ class WrapperTestCase(unittest.TestCase):
     def _open_all_asserts(self, wrapper):
         results = wrapper.open_all()
         self.assertEqual(set(results.keys()), set(dirs_contents))
+        self.assertEqual(b'one\n', results['one.txt'].read())
+        self.assertEqual(b'three\n', results['two/three.txt'].read())
 
     def _list_asserts(self, wrapper):
         self.assertEqual(set(wrapper.list()), set(dirs_contents))
