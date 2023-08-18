@@ -62,8 +62,8 @@ class TarArchiveWrapper(ArchiveWrapper):
             pass
         return None
 
-    def extract_to(self, path: Path) -> bool:
-        return True
+    def extract_to(self, path: Path) -> None:
+        self.archive_obj.extractall(path)
 
 
 class ZipArchiveWrapper(ArchiveWrapper):
@@ -84,8 +84,8 @@ class ZipArchiveWrapper(ArchiveWrapper):
             return None
         return item
 
-    def extract_to(self, path: Path) -> bool:
-        return True
+    def extract_to(self, path: Path) -> None:
+        self.archive_obj.extractall(path)
 
 
 class SevenZArchiveWrapper(ArchiveWrapper):
@@ -112,8 +112,8 @@ class SevenZArchiveWrapper(ArchiveWrapper):
             return {name: None}
         return None
 
-    def extract_to(self, path: Path) -> bool:
-        return True
+    def extract_to(self, path: Path) -> None:
+        self.archive_obj.extractall(path)
 
 
 class FileUnAwareArchiveWrapper(ArchiveWrapper):
@@ -134,5 +134,7 @@ class FileUnAwareArchiveWrapper(ArchiveWrapper):
             return {name: self.archive_obj}
         return None
 
-    def extract_to(self, path: Path) -> bool:
-        return True
+    def extract_to(self, path: Path) -> None:
+        file_path = Path(path, self._name())
+        with open(file_path, 'wb') as targetfobj:
+            targetfobj.write(self.archive_obj.read())
