@@ -1,6 +1,7 @@
 import os
 import io
 import unittest
+import tempfile
 import hashlib
 import pathlib
 import tarfile
@@ -23,11 +24,6 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURES_DIR = os.path.join(SCRIPT_DIR, 'fixtures')
 
 
-shas = {
-    'one.txt': '2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806',   # noqa E501
-    'three.txt': 'f6936912184481f5edd4c304ce27c5a1a827804fc7f329f43d273b8621870776'  # noqa E501
-}
-
 dirs_contents = [
     'two/',
     'one.txt',
@@ -41,7 +37,6 @@ dirs_contents = [
     'two/four/seven/.keep',
     'two/five/nine/ten.txt'
  ]
-
 
 class WrapperTestCase(unittest.TestCase):
 
@@ -82,6 +77,22 @@ class WrapperTestCase(unittest.TestCase):
     def _list_asserts(self, wrapper):
         self.assertEqual(set(wrapper.list()), set(dirs_contents))
 
+    def _extract_to_asserts(self, wrapper):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            wrapper.extract_to(temp_dir)
+            files = []
+            dirs = []
+            for _, _dirs, _files in os.walk(temp_dir):
+                dirs.extend(_dirs)
+                files.extend(_files)
+            self.assertEqual(set(['two', 'five', 'four', 'nine', 'seven']), set(dirs))
+            self.assertEqual(set(['one.txt', 'three.txt', 'eight.txt', 'ten.txt', 'six.txt', '.keep']), set(files))
+
+            with open(pathlib.Path(temp_dir, 'one.txt'), 'rb') as file:
+                self.assertEqual(b'one\n', file.read())
+            with open(pathlib.Path(temp_dir, 'two/three.txt'), 'rb') as file:
+                self.assertEqual(b'three\n', file.read())
+
 
 class TestTarArchiveWrapper(WrapperTestCase):
 
@@ -90,6 +101,9 @@ class TestTarArchiveWrapper(WrapperTestCase):
         self.archiveobj = tarfile.open(fileobj=self.fileobj)
         return TarArchiveWrapper(self.archiveobj, path)
 
+    # Check all variations of tarfile behave as expected
+    # i.e. provide a dict with a file like object as its
+    # only value and the file name as key
     def test_open_by_name_tar(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar')
         wrapper = self._get_tar_wrapper(path)
@@ -110,12 +124,16 @@ class TestTarArchiveWrapper(WrapperTestCase):
         wrapper = self._get_tar_wrapper(path)
         self._open_asserts(wrapper)
 
+    # Check we get None in place of a file-like object
+    # when 'opening' a directory
     def test_open_dir_by_name_tar_xz(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.xz')
         wrapper = self._get_tar_wrapper(path)
         result = wrapper.open_by_name('two/')
-        self.assertFalse(bool(result['two/']))  # type: ignore
+        self.assertIsNone(result['two/'])  
 
+    # Check we get consistent results when opening all
+    # files
     def test_open_all_by_name_tar(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar')
         wrapper = self._get_tar_wrapper(path)
@@ -136,6 +154,8 @@ class TestTarArchiveWrapper(WrapperTestCase):
         wrapper = self._get_tar_wrapper(path)
         self._open_all_asserts(wrapper)
 
+    # Check we get consistent results when listing the
+    # contents of variations of tarfile
     def test_list_tar(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar')
         wrapper = self._get_tar_wrapper(path)
@@ -156,6 +176,11 @@ class TestTarArchiveWrapper(WrapperTestCase):
         wrapper = self._get_tar_wrapper(path)
         self._list_asserts(wrapper)
 
+    # Check extract_to
+    def test_extract_to_xz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.xz')
+        wrapper = self._get_tar_wrapper(path)
+        self._extract_to_asserts(wrapper)
 
 class TestZipArchiveWrapper(WrapperTestCase):
 
@@ -173,7 +198,7 @@ class TestZipArchiveWrapper(WrapperTestCase):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
         wrapper = self._get_zip_wrapper(path)
         result = wrapper.open_by_name('two/')
-        self.assertFalse(bool(result['two/']))  # type: ignore
+        self.assertIsNone(result['two/'])
 
     def test_open_all_by_name(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
@@ -184,6 +209,11 @@ class TestZipArchiveWrapper(WrapperTestCase):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
         wrapper = self._get_zip_wrapper(path)
         self._list_asserts(wrapper)
+
+    def test_extract_to(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
+        wrapper = self._get_zip_wrapper(path)
+        self._extract_to_asserts(wrapper)
 
 
 class TestSevenZArchiveWrapper(WrapperTestCase):
@@ -202,7 +232,7 @@ class TestSevenZArchiveWrapper(WrapperTestCase):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
         wrapper = self._get_sevenz_wrapper(path)
         result = wrapper.open_by_name('two/')
-        self.assertFalse(bool(result['two/']))  # type: ignore
+        self.assertIsNone(result['two/'])
 
     def test_open_all_by_name(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
@@ -213,6 +243,11 @@ class TestSevenZArchiveWrapper(WrapperTestCase):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
         wrapper = self._get_sevenz_wrapper(path)
         self._list_asserts(wrapper)
+
+    def test_extract_to(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
+        wrapper = self._get_sevenz_wrapper(path)
+        self._extract_to_asserts(wrapper)
 
 
 class TestFileUnawareArchiveWrapper(WrapperTestCase):
@@ -273,6 +308,8 @@ class TestFileUnawareArchiveWrapper(WrapperTestCase):
         fileobj = result.get('file.txt')  # type: ignore
         self.assertEqual(b'Test text\n', fileobj.read())  # type: ignore
 
+    # Check we get consistent results when 'listing' the contents
+    # of gz, xz, bz2
     def test_list_gz(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.gz')
         wrapper = self._get_gz_wrapper(path)
@@ -287,3 +324,14 @@ class TestFileUnawareArchiveWrapper(WrapperTestCase):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
         wrapper = self._get_xz_wrapper(path)
         self.assertEqual(wrapper.list(), ['file.txt'])
+
+    # Check extract_to
+    def test_extract_to_xz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
+        wrapper = self._get_xz_wrapper(path)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            wrapper.extract_to(temp_dir)
+            self.assertEqual(set(['file.txt']), set(os.listdir(temp_dir)))
+            with open(pathlib.Path(temp_dir, 'file.txt'), 'rb') as file:
+                self.assertEqual(b'Test text\n', file.read())
+
