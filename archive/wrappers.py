@@ -9,12 +9,12 @@ import zipfile
 
 import py7zr
 
-import archive_types as at
+import archive.archive_types as at
 
 
 class ArchiveWrapper(ABC):
 
-    @staticmethod
+    @abstractmethod
     def __init__(self, archive_obj: at.ArchiveIO, path: Path) -> None:
         pass
 
@@ -36,6 +36,9 @@ class TarArchiveWrapper(ArchiveWrapper):
     def open(self, name: str) -> Union[dict[Any, Any], None]:
         return {name: self.archive_obj.extractfile(name)}
 
+    def extract_to(self, path: Path) -> bool:
+        return True
+
 
 class ZipArchiveWrapper(ArchiveWrapper):
 
@@ -45,6 +48,9 @@ class ZipArchiveWrapper(ArchiveWrapper):
 
     def open(self, name: str) -> Union[dict[Any, Any], None]:
         return {name: self.archive_obj.open(name)}
+
+    def extract_to(self, path: Path) -> bool:
+        return True
 
 
 class SevenZArchiveWrapper(ArchiveWrapper):
@@ -58,6 +64,9 @@ class SevenZArchiveWrapper(ArchiveWrapper):
         if content and len(content.keys()) == 1:
             return content
 
+    def extract_to(self, path: Path) -> bool:
+        return True
+
 
 class FileUnAwareArchiveWrapper(ArchiveWrapper):
 
@@ -67,3 +76,9 @@ class FileUnAwareArchiveWrapper(ArchiveWrapper):
 
     def _name(self):
         return os.path.splitext(os.path.basename(self.path))[0]
+
+    def open(self, name):
+        return {self._name(): self.archive_obj}
+
+    def extract_to(self, path: Path) -> bool:
+        return True
