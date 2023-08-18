@@ -30,6 +30,14 @@ class ArchiveWrapper(ABC):
     def extract_to(self, path: Path) -> bool:
         pass
 
+    def open_all(self):
+        all_items = {}
+        for name in self.list():
+            item = self.open_by_name(name)
+            if item:
+                all_items.update(item)
+        return all_items
+
 
 class TarArchiveWrapper(ArchiveWrapper):
 
@@ -69,7 +77,9 @@ class ZipArchiveWrapper(ArchiveWrapper):
 
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         try:
-            item = {name: self.archive_obj.open(name)}
+            item: dict[str, Any] = {name: self.archive_obj.open(name)}
+            if name.endswith('/'):
+                item[name] = None
         except KeyError:
             return None
         return item
@@ -96,8 +106,10 @@ class SevenZArchiveWrapper(ArchiveWrapper):
     def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
         self.archive_obj.reset()
         item = self.archive_obj.read(targets=[name])
-        if item and len(item.keys()) == 1:
+        if item:
             return item
+        if name in self.list():
+            return {name: None}
         return None
 
     def extract_to(self, path: Path) -> bool:
@@ -118,6 +130,8 @@ class FileUnAwareArchiveWrapper(ArchiveWrapper):
 
     # TODO - return file object if name is given
     def open_by_name(self, name: str):
+        if name == self._name():
+            return {name: self.archive_obj}
         return None
 
     def extract_to(self, path: Path) -> bool:

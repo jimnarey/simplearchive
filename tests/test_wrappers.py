@@ -1,4 +1,5 @@
 import os
+import io
 import unittest
 import hashlib
 import pathlib
@@ -72,6 +73,10 @@ class WrapperTestCase(unittest.TestCase):
         result = wrapper.open_by_name('notafile')
         self.assertIsNone(result)
 
+    def _open_all_asserts(self, wrapper):
+        results = wrapper.open_all()
+        self.assertEqual(set(results.keys()), set(dirs_contents))
+
     def _list_asserts(self, wrapper):
         self.assertEqual(set(wrapper.list()), set(dirs_contents))
 
@@ -102,6 +107,32 @@ class TestTarArchiveWrapper(WrapperTestCase):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.xz')
         wrapper = self._get_tar_wrapper(path)
         self._open_asserts(wrapper)
+
+    def test_open_dir_by_name_tar_xz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.xz')
+        wrapper = self._get_tar_wrapper(path)
+        result = wrapper.open_by_name('two/')
+        self.assertFalse(bool(result['two/']))  # type: ignore
+
+    def test_open_all_by_name_tar(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar')
+        wrapper = self._get_tar_wrapper(path)
+        self._open_all_asserts(wrapper)
+
+    def test_open_all_by_name_tar_gz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.gz')
+        wrapper = self._get_tar_wrapper(path)
+        self._open_all_asserts(wrapper)
+
+    def test_open_all_by_name_tar_bz2(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.bz2')
+        wrapper = self._get_tar_wrapper(path)
+        self._open_all_asserts(wrapper)
+
+    def test_open_all_by_name_tar_xz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.xz')
+        wrapper = self._get_tar_wrapper(path)
+        self._open_all_asserts(wrapper)
 
     def test_list_tar(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar')
@@ -136,6 +167,17 @@ class TestZipArchiveWrapper(WrapperTestCase):
         wrapper = self._get_zip_wrapper(path)
         self._open_asserts(wrapper)
 
+    def test_open_dir_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
+        wrapper = self._get_zip_wrapper(path)
+        result = wrapper.open_by_name('two/')
+        self.assertFalse(bool(result['two/']))  # type: ignore
+
+    def test_open_all_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
+        wrapper = self._get_zip_wrapper(path)
+        self._open_all_asserts(wrapper)
+
     def test_list(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
         wrapper = self._get_zip_wrapper(path)
@@ -153,6 +195,17 @@ class TestSevenZArchiveWrapper(WrapperTestCase):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
         wrapper = self._get_sevenz_wrapper(path)
         self._open_asserts(wrapper)
+
+    def test_open_dir_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
+        wrapper = self._get_sevenz_wrapper(path)
+        result = wrapper.open_by_name('two/')
+        self.assertFalse(bool(result['two/']))  # type: ignore
+
+    def test_open_all_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
+        wrapper = self._get_sevenz_wrapper(path)
+        self._open_all_asserts(wrapper)
 
     def test_list(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
@@ -180,17 +233,43 @@ class TestFileUnawareArchiveWrapper(WrapperTestCase):
     def test_open_by_name_gz(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.gz')
         wrapper = self._get_gz_wrapper(path)
-        self.assertIsNone(wrapper.open_by_name('anything'))
+        result = wrapper.open_by_name('file.txt')
+        self.assertIn('file.txt', result)  # type: ignore
+        self.assertEqual(len(result.keys()), 1)  # type: ignore
+        fileobj = result.get('file.txt')  # type: ignore
+        self.assertEqual(b'Test text\n', fileobj.read())  # type: ignore
 
     def test_open_by_name_bz2(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.bz2')
         wrapper = self._get_bz2_wrapper(path)
-        self.assertIsNone(wrapper.open_by_name('anything'))
+        result = wrapper.open_by_name('file.txt')
+        self.assertIn('file.txt', result)  # type: ignore
+        self.assertEqual(len(result.keys()), 1)  # type: ignore
+        fileobj = result.get('file.txt')  # type: ignore
+        self.assertEqual(b'Test text\n', fileobj.read())  # type: ignore
 
     def test_open_by_name_xz(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
         wrapper = self._get_xz_wrapper(path)
+        result = wrapper.open_by_name('file.txt')
+        self.assertIn('file.txt', result)  # type: ignore
+        self.assertEqual(len(result.keys()), 1)  # type: ignore
+        fileobj = result.get('file.txt')  # type: ignore
+        self.assertEqual(b'Test text\n', fileobj.read())  # type: ignore
+
+    def test_open_by_name_bad_name_xz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
+        wrapper = self._get_xz_wrapper(path)
         self.assertIsNone(wrapper.open_by_name('anything'))
+
+    def test_open_all_by_name_xz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
+        wrapper = self._get_xz_wrapper(path)
+        result = wrapper.open_all()
+        self.assertIn('file.txt', result)  # type: ignore
+        self.assertEqual(len(result.keys()), 1)  # type: ignore
+        fileobj = result.get('file.txt')  # type: ignore
+        self.assertEqual(b'Test text\n', fileobj.read())  # type: ignore
 
     def test_list_gz(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.gz')
