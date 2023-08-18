@@ -26,62 +26,92 @@ shas = {
 
 class WrapperTestCase(unittest.TestCase):
 
-    def _open_tests(self, wrapper):
+    def _open_asserts(self, wrapper):
 
-        result = wrapper.open('one.txt')
+        result = wrapper.open_by_name('one.txt')
         self.assertIsInstance(result, dict)
         self.assertIn('one.txt', result)
         fileobj = result.get('one.txt')
         self.assertEqual(b'one\n', fileobj.read())
 
-        result = wrapper.open('two/three.txt')
+        result = wrapper.open_by_name('two/three.txt')
         self.assertIsInstance(result, dict)
         self.assertIn('two/three.txt', result)
         fileobj = result.get('two/three.txt')
         self.assertEqual(b'three\n', fileobj.read())
 
+        result = wrapper.open_by_name('notafile')
+        self.assertIsNone(result)
+
 
 class TestTarArchiveWrapper(WrapperTestCase):
 
-    def setUp(self):
-        pass
-
-    def _test_open(self, path):
+    def _test_open_by_name(self, path):
         with open(path, 'rb') as fileobj:
             tar = tarfile.open(fileobj=fileobj)
             tar_wrapper = TarArchiveWrapper(tar, path)
-            self._open_tests(tar_wrapper)
+            self._open_asserts(tar_wrapper)
 
-    def test_open_tar(self):
+    def test_open_by_name_tar(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar')
-        self._test_open(path)
+        self._test_open_by_name(path)
 
-    def test_open_tar_gz(self):
+    def test_open_by_name_tar_gz(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.gz')
-        self._test_open(path)
+        self._test_open_by_name(path)
 
-    def test_open_tar_bz2(self):
+    def test_open_by_name_tar_bz2(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.bz2')
-        self._test_open(path)
+        self._test_open_by_name(path)
 
-    def test_open_tar_xz(self):
+    def test_open_by_name_tar_xz(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.xz')
-        self._test_open(path)
+        self._test_open_by_name(path)
 
 
 class TestZipArchiveWrapper(WrapperTestCase):
 
-    def test_open(self):
-        pass
+    def _test_open_by_name(self, path):
+        with open(path, 'rb') as fileobj:
+            zip = zipfile.ZipFile(fileobj)
+            zip_wrapper = ZipArchiveWrapper(zip, path)
+            self._open_asserts(zip_wrapper)
+
+    def test_open_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
+        self._test_open_by_name(path)
 
 
 class TestSevenZArchiveWrapper(WrapperTestCase):
 
-    def test_open(self):
-        pass
+    def _test_open_by_name(self, path):
+        with open(path, 'rb') as fileobj:
+            sevenZ = py7zr.SevenZipFile(fileobj)
+            sZ_wrapper = SevenZArchiveWrapper(sevenZ, path)
+            self._open_asserts(sZ_wrapper)
+
+    def test_open_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
+        self._test_open_by_name(path)
 
 
 class TestFileUnawareArchiveWrapper(WrapperTestCase):
 
-    def test_open(self):
-        pass
+    @staticmethod
+    def _get_wrapper(path):
+        fileobj = open(path, 'rb')
+        sevenZ = py7zr.SevenZipFile(fileobj)
+        return SevenZArchiveWrapper(sevenZ, path)
+
+    # def test_open_by_name_gz(self):
+    #     path = pathlib.Path(FIXTURES_DIR, 'file.txt.gz')
+    #     wrapper = self._get_wrapper(path)
+    #     self.assertIsInstance(wrapper.open_by_name(),  )
+
+    # def test_open_by_name_bz2(self):
+    #     path = pathlib.Path(FIXTURES_DIR, 'file.txt.bz2')
+    #     wrapper = self._get_wrapper(path)
+
+    # def test_open_by_name_xz(self):
+    #     path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
+    #     wrapper = self._get_wrapper(path)
