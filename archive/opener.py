@@ -9,6 +9,7 @@ import lzma
 from typing import IO, Optional, Union, Callable
 
 import py7zr
+import rarfile
 
 import archive.archive_types as at
 
@@ -76,6 +77,14 @@ def open_as_7z(fileobj: IO[bytes]) -> Optional[py7zr.SevenZipFile]:
     return szf
 
 
+def open_as_rar(fileobj: IO[bytes]) -> Optional[py7zr.SevenZipFile]:
+    try:
+        rarf = rarfile.RarFile(fileobj)
+    except rarfile.NotRarFile:
+        return None
+    return rarf
+
+
 OPEN_FUNCS = [
     open_as_tar_7z,
     open_as_tar,
@@ -84,6 +93,7 @@ OPEN_FUNCS = [
     open_as_gzip,
     open_as_lzma,
     open_as_bz2,
+    open_as_rar
 ]
 
 # TODO - handle rar, handle lzma
@@ -97,7 +107,8 @@ EXTENSIONS = {
     '.gz': open_as_gzip,
     '.xz': open_as_lzma,
     '.bz2': open_as_bz2,
-    '.7z': open_as_7z
+    '.7z': open_as_7z,
+    '.rar': open_as_rar
 }
 
 
