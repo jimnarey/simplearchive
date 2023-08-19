@@ -267,32 +267,30 @@ class TestFileUnawareArchiveWrapper(WrapperTestCase):
         self.archiveobj = lzma.open(self.fileobj)
         return FileUnAwareArchiveWrapper(self.archiveobj, path)
 
-    def test_open_by_name_gz(self):
-        path = pathlib.Path(FIXTURES_DIR, 'file.txt.gz')
-        wrapper = self._get_gz_wrapper(path)
+    def _test_open_by_name(self, wrapper):
         result = wrapper.open_by_name('file.txt')
         self.assertIn('file.txt', result)  # type: ignore
         self.assertEqual(len(result.keys()), 1)  # type: ignore
         fileobj = result.get('file.txt')  # type: ignore
         self.assertEqual(b'Test text\n', fileobj.read())  # type: ignore
+
+    # If the file name without the gz/xz/bz2 extension is provided, 
+    # the data is returned as a dict with a file-like object. Check
+    # this works consistently across compression types
+    def test_open_by_name_gz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.gz')
+        wrapper = self._get_gz_wrapper(path)
+        self._test_open_by_name(wrapper)
 
     def test_open_by_name_bz2(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.bz2')
         wrapper = self._get_bz2_wrapper(path)
-        result = wrapper.open_by_name('file.txt')
-        self.assertIn('file.txt', result)  # type: ignore
-        self.assertEqual(len(result.keys()), 1)  # type: ignore
-        fileobj = result.get('file.txt')  # type: ignore
-        self.assertEqual(b'Test text\n', fileobj.read())  # type: ignore
+        self._test_open_by_name(wrapper)
 
     def test_open_by_name_xz(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
         wrapper = self._get_xz_wrapper(path)
-        result = wrapper.open_by_name('file.txt')
-        self.assertIn('file.txt', result)  # type: ignore
-        self.assertEqual(len(result.keys()), 1)  # type: ignore
-        fileobj = result.get('file.txt')  # type: ignore
-        self.assertEqual(b'Test text\n', fileobj.read())  # type: ignore
+        self._test_open_by_name(wrapper)
 
     def test_open_by_name_bad_name_xz(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.xz')
