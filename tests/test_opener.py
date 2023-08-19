@@ -8,6 +8,7 @@ from bz2 import BZ2File
 from lzma import LZMAFile
 
 from py7zr import SevenZipFile
+from rarfile import RarFile
 
 from archive import opener
 
@@ -134,6 +135,16 @@ class TestopenerArchiveSpecificFuncs(unittest.TestCase):
             value = opener.open_as_7z(fileobj)
             self.assertIsNone(value)
 
+    # rar
+    def test_open_as_rar_with_rar_file(self):
+        with open(os.path.join(FIXTURES_DIR, 'file.txt.rar'), 'rb') as fileobj:
+            value = opener.open_as_rar(fileobj)
+            self.assertIsInstance(value, RarFile)
+
+    def test_open_as_rar_with_non_rar_file(self):
+        with open(os.path.join(FIXTURES_DIR, 'file.txt.bz2'), 'rb') as fileobj:
+            value = opener.open_as_rar(fileobj)
+            self.assertIsNone(value)
 
 class TestopenerGeneralFuncs(unittest.TestCase):
 
