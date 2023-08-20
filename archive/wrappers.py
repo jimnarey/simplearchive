@@ -38,10 +38,11 @@ class ArchiveWrapper(ABC):
         return os.path.splitext(os.path.basename(self.path))[0]
     
     def _num_root_items(self):
-        pass
+        root_items = set([item.split('/')[0] for item in self.list()])
+        return len(root_items)
 
     def _get_extract_path(self, path):
-        if len(self.list()) < 2:
+        if self._num_root_items() < 2:
             return path
         return Path(path, self._name())
 

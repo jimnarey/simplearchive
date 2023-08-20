@@ -1,8 +1,9 @@
 import os
 import io
 import unittest
+from unittest.mock import patch
 import tempfile
-import hashlib
+# import hashlib
 import pathlib
 import tarfile
 import zipfile
@@ -91,29 +92,63 @@ class WrapperTestCase(unittest.TestCase):
     def _list_asserts(self, wrapper):
         self.assertEqual(set(wrapper.list()), set(dirs_contents))
 
-    def _extract_to_asserts(self, wrapper):
+    def _extract_to_asserts_dirs(self, wrapper):
         with tempfile.TemporaryDirectory() as temp_dir:
             wrapper.extract_to(temp_dir)
             files = [file for _, __, files in os.walk(temp_dir) for file in files]
             dirs = [dir for _, dirs, __ in os.walk(temp_dir) for dir in dirs]
             self.assertEqual(set(['dirs', 'two', 'five', 'four', 'nine', 'seven']), set(dirs))
             self.assertEqual(set(['one.txt', 'three.txt', 'eight.txt', 'ten.txt', 'six.txt', '.keep']), set(files))
-
             with open(pathlib.Path(temp_dir, 'dirs', 'one.txt'), 'rb') as file:
                 self.assertEqual(b'one\n', file.read())
             with open(pathlib.Path(temp_dir, 'dirs', 'two/three.txt'), 'rb') as file:
                 self.assertEqual(b'three\n', file.read())
 
+    def _extract_to_asserts_file(self, wrapper):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            wrapper.extract_to(temp_dir)
+            files = [file for _, __, files in os.walk(temp_dir) for file in files]
+            dirs = [dir for _, dirs, __ in os.walk(temp_dir) for dir in dirs]
+            self.assertEqual(len(dirs), 0)
+            self.assertEqual({'file.txt'}, set(files))
+            with open(pathlib.Path(temp_dir, 'file.txt'), 'rb') as file:
+                self.assertEqual(b'Test text\n', file.read())
+
+
+class ConcreteArchiveWrapperMock(ArchiveWrapper):
+    def __init__(self):
+        pass
+    
+    def list(self):
+        pass
+    
+    def open_by_name(self, name):
+        pass
+    
+    def extract_to(self, path):
+        pass
+
 
 class TestArchiveWrapper(unittest.TestCase):
 
-    def test__num_root_items(self):
-        contents = ['one.txt', 'two/four/seven/.keep', 
-                    'two/five/nine/ten.txt', 'two/four/six.txt', 
-                    'two/five/eight.txt', 'two/three.txt', 
-                    'two/four/seven/', 'two/five/nine/', 
-                    'two/four/', 'two/five/', 'two/']
-        
+    @patch.object(ConcreteArchiveWrapperMock, 'list')
+    def test__num_root_items(self, mock_list):
+
+        test_cases = [
+            (['one.txt', 'two/'], 2),
+            (['one.txt', 'two/', 'two/three.txt'], 2),
+            (['one.txt', 'two/', 'two/three.txt', 'four', 'four/five.txt'], 3),
+            # Handle case where dir ('two') isn't present as a
+            # separate entry
+            (['one.txt', 'two/three.txt'], 2),
+            (['one.txt', 'two/three.txt', 'four/five.txt'], 3),
+            (['one.txt', 'two/', 'three.txt'], 3),
+        ]
+
+        archive_wrapper = ConcreteArchiveWrapperMock()
+        for case in test_cases:             
+            mock_list.return_value = case[0]
+            self.assertEqual(archive_wrapper._num_root_items(), case[1])
 
 
 class TestTarArchiveWrapper(WrapperTestCase):
@@ -199,25 +234,45 @@ class TestTarArchiveWrapper(WrapperTestCase):
         self._list_asserts(wrapper)
 
     # Check extract_to behaves consistently. 
-    def test_extract_to_tar(self):
+    def test_extract_to_dirs_tar(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar')
         wrapper = self._get_tar_wrapper(path)
-        self._extract_to_asserts(wrapper)
+        self._extract_to_asserts_dirs(wrapper)
 
-    def test_extract_to_tar_gz(self):
+    def test_extract_to_dirs_tar_gz(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.gz')
         wrapper = self._get_tar_wrapper(path)
-        self._extract_to_asserts(wrapper)
+        self._extract_to_asserts_dirs(wrapper)
 
-    def test_extract_to_tar_bz2(self):
+    def test_extract_to_dirs_tar_bz2(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.bz2')
         wrapper = self._get_tar_wrapper(path)
-        self._extract_to_asserts(wrapper)
+        self._extract_to_asserts_dirs(wrapper)
 
-    def test_extract_to_xz(self):
+    def test_extract_to_dirs_tar_xz(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.xz')
         wrapper = self._get_tar_wrapper(path)
-        self._extract_to_asserts(wrapper)
+        self._extract_to_asserts_dirs(wrapper)
+
+    def test_extract_to_file_tar(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.tar')
+        wrapper = self._get_tar_wrapper(path)
+        self._extract_to_asserts_file(wrapper)
+
+    def test_extract_to_file_tar_gz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.tar.gz')
+        wrapper = self._get_tar_wrapper(path)
+        self._extract_to_asserts_file(wrapper)
+
+    def test_extract_to_file_tar_bz2(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.tar.bz2')
+        wrapper = self._get_tar_wrapper(path)
+        self._extract_to_asserts_file(wrapper)
+
+    def test_extract_to_file_tar_xz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.tar.xz')
+        wrapper = self._get_tar_wrapper(path)
+        self._extract_to_asserts_file(wrapper)
 
 class TestZipArchiveWrapper(WrapperTestCase):
 
@@ -247,10 +302,15 @@ class TestZipArchiveWrapper(WrapperTestCase):
         wrapper = self._get_zip_wrapper(path)
         self._list_asserts(wrapper)
 
-    def test_extract_to(self):
+    def test_extract_to_dirs(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.zip')
         wrapper = self._get_zip_wrapper(path)
-        self._extract_to_asserts(wrapper)
+        self._extract_to_asserts_dirs(wrapper)
+
+    def test_extract_to_file(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.zip')
+        wrapper = self._get_zip_wrapper(path)
+        self._extract_to_asserts_file(wrapper)
 
 class TestSevenZArchiveWrapper(WrapperTestCase):
 
@@ -280,10 +340,15 @@ class TestSevenZArchiveWrapper(WrapperTestCase):
         wrapper = self._get_sevenz_wrapper(path)
         self._list_asserts(wrapper)
 
-    def test_extract_to(self):
+    def test_extract_to_dirs(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
         wrapper = self._get_sevenz_wrapper(path)
-        self._extract_to_asserts(wrapper)
+        self._extract_to_asserts_dirs(wrapper)
+
+    def test_extract_to_file(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.7z')
+        wrapper = self._get_sevenz_wrapper(path)
+        self._extract_to_asserts_file(wrapper)
 
 
 class TestRarArchiveWrapper(WrapperTestCase):
@@ -314,10 +379,15 @@ class TestRarArchiveWrapper(WrapperTestCase):
         wrapper = self._get_rar_wrapper(path)
         self._list_asserts(wrapper)
 
-    def test_extract_to(self):
+    def test_extract_to_dirs(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.rar')
         wrapper = self._get_rar_wrapper(path)
-        self._extract_to_asserts(wrapper)
+        self._extract_to_asserts_dirs(wrapper)
+
+    def test_extract_to_file(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.rar')
+        wrapper = self._get_rar_wrapper(path)
+        self._extract_to_asserts_file(wrapper)
 
 
 class TestFileUnawareArchiveWrapper(WrapperTestCase):
@@ -402,4 +472,3 @@ class TestFileUnawareArchiveWrapper(WrapperTestCase):
             self.assertEqual(set(['file.txt']), set(os.listdir(temp_dir)))
             with open(pathlib.Path(temp_dir, 'file.txt'), 'rb') as file:
                 self.assertEqual(b'Test text\n', file.read())
-
