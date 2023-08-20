@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from io import RawIOBase
+# from io import RawIOBase
 import os
 import io
+from functools import cached_property
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import IO, Union, Any
@@ -33,6 +34,17 @@ class ArchiveWrapper(ABC):
     def extract_to(self, path: Path) -> bool:
         pass
 
+    def _name(self) -> str:
+        return os.path.splitext(os.path.basename(self.path))[0]
+    
+    def _num_root_items(self):
+        pass
+
+    def _get_extract_path(self, path):
+        if len(self.list()) < 2:
+            return path
+        return Path(path, self._name())
+
     def open_all(self):
         all_items = {}
         for name in self.list():
@@ -48,6 +60,12 @@ class TarArchiveWrapper(ArchiveWrapper):
         self.archive_obj = archive_obj
         self.path = path
 
+    def _name(self):
+        name = super()._name()
+        if name.endswith('.tar'):
+            return name[:-4]
+        return name
+    
     def list(self) -> list[str]:
         members = self.archive_obj.getmembers()
         names = []
@@ -66,7 +84,9 @@ class TarArchiveWrapper(ArchiveWrapper):
         return None
 
     def extract_to(self, path: Path) -> None:
-        self.archive_obj.extractall(path)
+        path_ = self._get_extract_path(path)
+        # breakpoint()
+        self.archive_obj.extractall(path_)
 
 
 class ZipArchiveWrapper(ArchiveWrapper):
@@ -88,6 +108,7 @@ class ZipArchiveWrapper(ArchiveWrapper):
         return item
 
     def extract_to(self, path: Path) -> None:
+        path = self._get_extract_path(path)
         self.archive_obj.extractall(path)
 
 
@@ -116,6 +137,7 @@ class SevenZArchiveWrapper(ArchiveWrapper):
         return None
 
     def extract_to(self, path: Path) -> None:
+        path = self._get_extract_path(path)
         self.archive_obj.extractall(path)
 
 
@@ -156,6 +178,7 @@ class RarArchiveWrapper(ArchiveWrapper):
         return item
 
     def extract_to(self, path: Path) -> None:
+        path = self._get_extract_path(path)
         self.archive_obj.extractall(path)
 
 
@@ -164,9 +187,6 @@ class FileUnAwareArchiveWrapper(ArchiveWrapper):
     def __init__(self, archive_obj: at.BuiltInFileUnAwareArchiveIO, path: Path) -> None:
         self.archive_obj = archive_obj
         self.path = path
-
-    def _name(self):
-        return os.path.splitext(os.path.basename(self.path))[0]
 
     def list(self) -> list[str]:
         return [self._name()]
@@ -178,6 +198,7 @@ class FileUnAwareArchiveWrapper(ArchiveWrapper):
         return None
 
     def extract_to(self, path: Path) -> None:
+        path = self._get_extract_path(path)
         file_path = Path(path, self._name())
         with open(file_path, 'wb') as targetfobj:
             targetfobj.write(self.archive_obj.read())

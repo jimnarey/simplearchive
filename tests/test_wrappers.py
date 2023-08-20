@@ -94,18 +94,26 @@ class WrapperTestCase(unittest.TestCase):
     def _extract_to_asserts(self, wrapper):
         with tempfile.TemporaryDirectory() as temp_dir:
             wrapper.extract_to(temp_dir)
-            files = []
-            dirs = []
-            for _, _dirs, _files in os.walk(temp_dir):
-                dirs.extend(_dirs)
-                files.extend(_files)
-            self.assertEqual(set(['two', 'five', 'four', 'nine', 'seven']), set(dirs))
+            files = [file for _, __, files in os.walk(temp_dir) for file in files]
+            dirs = [dir for _, dirs, __ in os.walk(temp_dir) for dir in dirs]
+            self.assertEqual(set(['dirs', 'two', 'five', 'four', 'nine', 'seven']), set(dirs))
             self.assertEqual(set(['one.txt', 'three.txt', 'eight.txt', 'ten.txt', 'six.txt', '.keep']), set(files))
 
-            with open(pathlib.Path(temp_dir, 'one.txt'), 'rb') as file:
+            with open(pathlib.Path(temp_dir, 'dirs', 'one.txt'), 'rb') as file:
                 self.assertEqual(b'one\n', file.read())
-            with open(pathlib.Path(temp_dir, 'two/three.txt'), 'rb') as file:
+            with open(pathlib.Path(temp_dir, 'dirs', 'two/three.txt'), 'rb') as file:
                 self.assertEqual(b'three\n', file.read())
+
+
+class TestArchiveWrapper(unittest.TestCase):
+
+    def test__num_root_items(self):
+        contents = ['one.txt', 'two/four/seven/.keep', 
+                    'two/five/nine/ten.txt', 'two/four/six.txt', 
+                    'two/five/eight.txt', 'two/three.txt', 
+                    'two/four/seven/', 'two/five/nine/', 
+                    'two/four/', 'two/five/', 'two/']
+        
 
 
 class TestTarArchiveWrapper(WrapperTestCase):
@@ -190,7 +198,22 @@ class TestTarArchiveWrapper(WrapperTestCase):
         wrapper = self._get_tar_wrapper(path)
         self._list_asserts(wrapper)
 
-    # Check extract_to
+    # Check extract_to behaves consistently. 
+    def test_extract_to_tar(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar')
+        wrapper = self._get_tar_wrapper(path)
+        self._extract_to_asserts(wrapper)
+
+    def test_extract_to_tar_gz(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.gz')
+        wrapper = self._get_tar_wrapper(path)
+        self._extract_to_asserts(wrapper)
+
+    def test_extract_to_tar_bz2(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.bz2')
+        wrapper = self._get_tar_wrapper(path)
+        self._extract_to_asserts(wrapper)
+
     def test_extract_to_xz(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.tar.xz')
         wrapper = self._get_tar_wrapper(path)
