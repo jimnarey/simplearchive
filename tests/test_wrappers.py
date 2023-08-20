@@ -9,14 +9,16 @@ import zipfile
 import gzip
 import lzma
 import bz2
-import py7zr
 from typing import IO
+
+import py7zr
+import rarfile
 
 from archive import archive_types
 
 from archive.wrappers import ArchiveWrapper, TarArchiveWrapper, \
-                            ZipArchiveWrapper, \
-                            FileUnAwareArchiveWrapper, SevenZArchiveWrapper
+                             ZipArchiveWrapper, FileUnAwareArchiveWrapper, \
+                             SevenZArchiveWrapper, RarArchiveWrapper
 
 
 
@@ -51,19 +53,26 @@ class WrapperTestCase(unittest.TestCase):
             pass
         self.fileobj.close()
 
+    # TODO - decide on and test for behaviour when trying to open a dir
+    # Ensure trailing slashes are handled correctly 
     def _open_asserts(self, wrapper):
-
         result = wrapper.open_by_name('one.txt')
         self.assertIsInstance(result, dict)
         self.assertIn('one.txt', result)
-        fileobj = result.get('one.txt')
-        self.assertEqual(b'one\n', fileobj.read())
+        self.archiveobj = result.get('one.txt')
+        self.assertEqual(b'one\n', self.archiveobj.read())
 
         result = wrapper.open_by_name('two/three.txt')
         self.assertIsInstance(result, dict)
         self.assertIn('two/three.txt', result)
-        fileobj = result.get('two/three.txt')
-        self.assertEqual(b'three\n', fileobj.read())
+        self.archiveobj = result.get('two/three.txt')
+        self.assertEqual(b'three\n', self.archiveobj.read())
+
+        result = wrapper.open_by_name('two/five/eight.txt')
+        self.assertIsInstance(result, dict)
+        self.assertIn('two/five/eight.txt', result)
+        self.archiveobj = result.get('two/five/eight.txt')
+        self.assertEqual(b'eight\n', self.archiveobj.read())
 
         result = wrapper.open_by_name('notafile')
         self.assertIsNone(result)
@@ -73,6 +82,11 @@ class WrapperTestCase(unittest.TestCase):
         self.assertEqual(set(results.keys()), set(dirs_contents))
         self.assertEqual(b'one\n', results['one.txt'].read())
         self.assertEqual(b'three\n', results['two/three.txt'].read())
+        self.assertEqual(b'six\n', results['two/four/six.txt'].read())
+        self.assertEqual(b'eight\n', results['two/five/eight.txt'].read())
+        self.assertEqual(b'', results['two/four/seven/.keep'].read())
+        self.assertEqual(b'ten\n', results['two/five/nine/ten.txt'].read())
+
 
     def _list_asserts(self, wrapper):
         self.assertEqual(set(wrapper.list()), set(dirs_contents))
@@ -215,7 +229,6 @@ class TestZipArchiveWrapper(WrapperTestCase):
         wrapper = self._get_zip_wrapper(path)
         self._extract_to_asserts(wrapper)
 
-
 class TestSevenZArchiveWrapper(WrapperTestCase):
 
     def _get_sevenz_wrapper(self, path):
@@ -247,6 +260,40 @@ class TestSevenZArchiveWrapper(WrapperTestCase):
     def test_extract_to(self):
         path = pathlib.Path(FIXTURES_DIR, 'dirs.7z')
         wrapper = self._get_sevenz_wrapper(path)
+        self._extract_to_asserts(wrapper)
+
+
+class TestRarArchiveWrapper(WrapperTestCase):
+
+    def _get_rar_wrapper(self, path):
+        self.fileobj = open(path, 'rb')
+        self.archiveobj = rarfile.RarFile(self.fileobj)
+        return RarArchiveWrapper(self.archiveobj, path)
+
+    def test_open_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.rar')
+        wrapper = self._get_rar_wrapper(path)
+        self._open_asserts(wrapper)
+
+    def test_open_dir_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.rar')
+        wrapper = self._get_rar_wrapper(path)
+        result = wrapper.open_by_name('two/')
+        self.assertIsNone(result['two/'])
+
+    def test_open_all_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.rar')
+        wrapper = self._get_rar_wrapper(path)
+        self._open_all_asserts(wrapper)
+
+    def test_list(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.rar')
+        wrapper = self._get_rar_wrapper(path)
+        self._list_asserts(wrapper)
+
+    def test_extract_to(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.rar')
+        wrapper = self._get_rar_wrapper(path)
         self._extract_to_asserts(wrapper)
 
 

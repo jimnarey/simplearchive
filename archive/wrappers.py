@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+from io import RawIOBase
 import os
+import io
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import IO, Union, Any
@@ -8,6 +10,7 @@ import tarfile
 import zipfile
 
 import py7zr
+import rarfile
 
 import archive.archive_types as at
 
@@ -111,6 +114,46 @@ class SevenZArchiveWrapper(ArchiveWrapper):
         if name in self.list():
             return {name: None}
         return None
+
+    def extract_to(self, path: Path) -> None:
+        self.archive_obj.extractall(path)
+
+
+# class RarFileObjWrapper(io.BufferedReader):
+
+#     def __init__(self, *args, **kwargs) -> None:
+#         super().__init__( *args, **kwargs)
+
+#     def read(self, *args, **kwargs) -> bytes:
+#         self.seek(0)
+#         return super().read(*args, **kwargs)
+
+class RarArchiveWrapper(ArchiveWrapper):
+
+    def __init__(self, archive_obj: rarfile.RarFile, path: Path) -> None:
+        self.archive_obj = archive_obj
+        self.path = path
+        self.rar_file_path = archive_obj.filename
+
+    def _refresh(self):
+        """
+        Workaround this issue: https://github.com/markokr/rarfile/issues/73
+        """
+        self.archive_obj.close()
+        self.archive_obj = rarfile.RarFile(self.rar_file_path)
+
+    def list(self) -> list[str]:
+        return self.archive_obj.namelist()
+
+    def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
+        self._refresh()
+        try:
+            item = {name: self.archive_obj.open(name)}
+        except io.UnsupportedOperation:
+            item = {name: None}
+        except rarfile.NoRarEntry:
+            item = None
+        return item
 
     def extract_to(self, path: Path) -> None:
         self.archive_obj.extractall(path)
