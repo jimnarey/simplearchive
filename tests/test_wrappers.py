@@ -14,12 +14,14 @@ from typing import IO
 
 import py7zr
 import rarfile
+import lhafile
 
 from archive import archive_types
 
 from archive.wrappers import ArchiveWrapper, TarArchiveWrapper, \
                              ZipArchiveWrapper, FileUnAwareArchiveWrapper, \
-                             SevenZArchiveWrapper, RarArchiveWrapper
+                             SevenZArchiveWrapper, RarArchiveWrapper, \
+                             LhaArchiveWrapper
 
 
 
@@ -387,6 +389,45 @@ class TestRarArchiveWrapper(WrapperTestCase):
     def test_extract_to_file(self):
         path = pathlib.Path(FIXTURES_DIR, 'file.txt.rar')
         wrapper = self._get_rar_wrapper(path)
+        self._extract_to_asserts_file(wrapper)
+
+
+class TestLhaArchiveWrapper(WrapperTestCase):
+
+    def _get_lha_wrapper(self, path):
+        self.fileobj = open(path, 'rb')
+        self.archiveobj = lhafile.LhaFile(self.fileobj)
+        return LhaArchiveWrapper(self.archiveobj, path)
+
+    def test_open_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.lha')
+        wrapper = self._get_lha_wrapper(path)
+        self._open_asserts(wrapper)
+
+    def test_open_dir_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.lha')
+        wrapper = self._get_lha_wrapper(path)
+        result = wrapper.open_by_name('two/')
+        self.assertIsNone(result['two/'])
+
+    def test_open_all_by_name(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.lha')
+        wrapper = self._get_lha_wrapper(path)
+        self._open_all_asserts(wrapper)
+
+    def test_list(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.lha')
+        wrapper = self._get_lha_wrapper(path)
+        self._list_asserts(wrapper)
+
+    def test_extract_to_dirs(self):
+        path = pathlib.Path(FIXTURES_DIR, 'dirs.lha')
+        wrapper = self._get_lha_wrapper(path)
+        self._extract_to_asserts_dirs(wrapper)
+
+    def test_extract_to_file(self):
+        path = pathlib.Path(FIXTURES_DIR, 'file.txt.lha')
+        wrapper = self._get_lha_wrapper(path)
         self._extract_to_asserts_file(wrapper)
 
 

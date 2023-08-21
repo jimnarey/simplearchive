@@ -10,6 +10,7 @@ from typing import IO, Optional, Union, Callable
 
 import py7zr
 import rarfile
+import lhafile
 
 import archive.archive_types as at
 
@@ -77,12 +78,20 @@ def open_as_7z(fileobj: IO[bytes]) -> Optional[py7zr.SevenZipFile]:
     return szf
 
 
-def open_as_rar(fileobj: IO[bytes]) -> Optional[py7zr.SevenZipFile]:
+def open_as_rar(fileobj: IO[bytes]) -> Optional[rarfile.RarFile]:
     try:
         rarf = rarfile.RarFile(fileobj)
     except rarfile.NotRarFile:
         return None
     return rarf
+
+
+def open_as_lha(fileobj: IO[bytes]) -> Optional[lhafile.LhaFile]:
+    try:
+        lhaf = lhafile.LhaFile(fileobj)
+    except lhafile.BadLhafile:
+        return None
+    return lhaf
 
 
 OPEN_FUNCS = [

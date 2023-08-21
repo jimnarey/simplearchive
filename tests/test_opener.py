@@ -9,6 +9,7 @@ from lzma import LZMAFile
 
 from py7zr import SevenZipFile
 from rarfile import RarFile
+from lhafile import LhaFile
 
 from archive import opener
 
@@ -135,6 +136,22 @@ class TestopenerArchiveSpecificFuncs(unittest.TestCase):
             value = opener.open_as_7z(fileobj)
             self.assertIsNone(value)
 
+    # tar.7z
+    def test_open_as_tar_7z_with_tar_7z_file(self):
+        with open(os.path.join(FIXTURES_DIR, 'file.tar.7z'), 'rb') as fileobj:
+            value = opener.open_as_tar_7z(fileobj)
+            self.assertIsInstance(value, TarFile)
+
+    def test_open_as_tar_7z_with_7z_file(self):
+        with open(os.path.join(FIXTURES_DIR, 'file.txt.7z'), 'rb') as fileobj:
+            value = opener.open_as_tar_7z(fileobj)
+            self.assertIsNone(value)
+
+    def test_open_as_tar_7z_with_non_7z_file(self):
+        with open(os.path.join(FIXTURES_DIR, 'file.txt.zip'), 'rb') as fileobj:
+            value = opener.open_as_tar_7z(fileobj)
+            self.assertIsNone(value)
+
     # rar
     def test_open_as_rar_with_rar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.rar'), 'rb') as fileobj:
@@ -146,7 +163,18 @@ class TestopenerArchiveSpecificFuncs(unittest.TestCase):
             value = opener.open_as_rar(fileobj)
             self.assertIsNone(value)
 
-class TestopenerGeneralFuncs(unittest.TestCase):
+    # lha
+    def test_open_as_rar_with_rar_file(self):
+        with open(os.path.join(FIXTURES_DIR, 'file.txt.lha'), 'rb') as fileobj:
+            value = opener.open_as_lha(fileobj)
+            self.assertIsInstance(value, LhaFile)
+
+    def test_open_as_rar_with_non_rar_file(self):
+        with open(os.path.join(FIXTURES_DIR, 'file.txt.bz2'), 'rb') as fileobj:
+            value = opener.open_as_lha(fileobj)
+            self.assertIsNone(value)
+
+class TestOpenerGeneralFuncs(unittest.TestCase):
 
     def test_open_with_zip_file(self):
         path = pathlib.Path(os.path.join(FIXTURES_DIR, 'file.txt.zip'))

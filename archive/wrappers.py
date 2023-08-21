@@ -12,6 +12,7 @@ import zipfile
 
 import py7zr
 import rarfile
+import lhafile
 
 import archive.archive_types as at
 
@@ -86,7 +87,6 @@ class TarArchiveWrapper(ArchiveWrapper):
 
     def extract_to(self, path: Path) -> None:
         path_ = self._get_extract_path(path)
-        # breakpoint()
         self.archive_obj.extractall(path_)
 
 
@@ -181,6 +181,40 @@ class RarArchiveWrapper(ArchiveWrapper):
     def extract_to(self, path: Path) -> None:
         path = self._get_extract_path(path)
         self.archive_obj.extractall(path)
+
+
+class LhaArchiveWrapper(ArchiveWrapper):
+
+    def __init__(self, archive_obj: lhafile.LhaFile, path: Path) -> None:
+        self.archive_obj = archive_obj
+        self.path = path
+        self._files = self.archive_obj.namelist()
+
+    def _dirs(self) -> list[str]:
+        dirs = list(set(['{}/'.format(parent) for file in self._files for parent in Path(file).parents]))
+        dirs.remove('./')
+        return dirs
+
+    def list(self) -> list[str]:
+        return self._files + self._dirs()
+
+    def open_by_name(self, name: str) -> Union[dict[Any, Any], None]:
+        try:
+            item = {name: io.BytesIO(self.archive_obj.read(name))}
+        except KeyError:
+            if name in self._dirs():
+                item = {name: None}
+            else:
+                item = None
+        return item
+
+    def extract_to(self, path: Path) -> None:
+        path = self._get_extract_path(path)
+        for file in self._files:
+            target_path = Path(path, file)
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(target_path, 'wb') as target_file:
+                target_file.write(self.archive_obj.read(file))
 
 
 class FileUnAwareArchiveWrapper(ArchiveWrapper):
