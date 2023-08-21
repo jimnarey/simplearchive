@@ -16,7 +16,7 @@ import py7zr
 import rarfile
 import lhafile
 
-from archive import archive_types
+from custom_types.io import ArchiveIO
 
 from archive.wrappers import ArchiveWrapper, TarArchiveWrapper, \
                              ZipArchiveWrapper, FileUnAwareArchiveWrapper, \
@@ -47,7 +47,7 @@ class WrapperTestCase(unittest.TestCase):
 
     def setUp(self):
         self.fileobj: IO[bytes]
-        self.archiveobj: archive_types.ArchiveIO
+        self.archiveobj: ArchiveIO
 
     def tearDown(self):
         try:
@@ -89,7 +89,6 @@ class WrapperTestCase(unittest.TestCase):
         self.assertEqual(b'eight\n', results['two/five/eight.txt'].read())
         self.assertEqual(b'', results['two/four/seven/.keep'].read())
         self.assertEqual(b'ten\n', results['two/five/nine/ten.txt'].read())
-
 
     def _list_asserts(self, wrapper):
         self.assertEqual(set(wrapper.list()), set(dirs_contents))

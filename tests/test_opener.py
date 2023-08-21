@@ -11,7 +11,7 @@ from py7zr import SevenZipFile
 from rarfile import RarFile
 from lhafile import LhaFile
 
-from archive import opener
+from archive import open_archive
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURES_DIR = os.path.join(SCRIPT_DIR, 'fixtures')
@@ -22,160 +22,160 @@ class TestopenerArchiveSpecificFuncs(unittest.TestCase):
     # zip
     def test_open_as_zip_with_zip_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.zip'), 'rb') as fileobj:
-            value = opener.open_as_zip(fileobj)
+            value = open_archive.open_as_zip(fileobj)
             self.assertIsInstance(value, ZipFile)
 
     def test_open_as_zip_with_non_zip_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.bz2'), 'rb') as fileobj:
-            value = opener.open_as_zip(fileobj)
+            value = open_archive.open_as_zip(fileobj)
             self.assertIsNone(value)
 
     # tarfile variations
     def test_open_as_tar_with_tar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.tar'), 'rb') as fileobj:
-            value = opener.open_as_tar(fileobj)
+            value = open_archive.open_as_tar(fileobj)
             self.assertIsInstance(value, TarFile)
 
     def test_open_as_tar_with_tar_bz2_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.bz2'), 'rb') as fileobj:
-            value = opener.open_as_tar(fileobj)
+            value = open_archive.open_as_tar(fileobj)
             self.assertIsInstance(value, TarFile)
 
     def test_open_as_tar_with_tar_gz_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.gz'), 'rb') as fileobj:
-            value = opener.open_as_tar(fileobj)
+            value = open_archive.open_as_tar(fileobj)
             self.assertIsInstance(value, TarFile)
 
     def test_open_as_tar_with_tar_xz_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.xz'), 'rb') as fileobj:
-            value = opener.open_as_tar(fileobj)
+            value = open_archive.open_as_tar(fileobj)
             self.assertIsInstance(value, TarFile)
 
     def test_open_as_tar_with_non_tar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.zip'), 'rb') as fileobj:
-            value = opener.open_as_tar(fileobj)
+            value = open_archive.open_as_tar(fileobj)
             self.assertIsNone(value)
 
     # tar.7z
     def test_open_as_tar_7z_with_tar_7z_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.7z'), 'rb') as fileobj:
-            value = opener.open_as_tar_7z(fileobj)
+            value = open_archive.open_as_tar_7z(fileobj)
             self.assertIsInstance(value, TarFile)
 
     def test_open_as_tar_7z_with_7z_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.7z'), 'rb') as fileobj:
-            value = opener.open_as_tar_7z(fileobj)
+            value = open_archive.open_as_tar_7z(fileobj)
             self.assertIsNone(value)
 
     def test_open_as_tar_7z_with_non_7z_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.zip'), 'rb') as fileobj:
-            value = opener.open_as_tar_7z(fileobj)
+            value = open_archive.open_as_tar_7z(fileobj)
             self.assertIsNone(value)
 
     # bz2
     def test_open_as_bz2_with_bz2_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.bz2'), 'rb') as fileobj:
-            value = opener.open_as_bz2(fileobj)
+            value = open_archive.open_as_bz2(fileobj)
             self.assertIsInstance(value, BZ2File)
 
     def test_open_as_bz2_with_bz2_tar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.bz2'), 'rb') as fileobj:
-            value = opener.open_as_bz2(fileobj)
+            value = open_archive.open_as_bz2(fileobj)
             self.assertIsInstance(value, BZ2File)
 
     def test_open_as_bz2_with_non_bz2_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.7z'), 'rb') as fileobj:
-            value = opener.open_as_bz2(fileobj)
+            value = open_archive.open_as_bz2(fileobj)
             self.assertIsNone(value)
 
     # gz
     def test_open_as_gzip_with_gzip_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.gz'), 'rb') as fileobj:
-            value = opener.open_as_gzip(fileobj)
+            value = open_archive.open_as_gzip(fileobj)
             self.assertIsInstance(value, GzipFile)
 
     def test_open_as_gzip_with_gzip_tar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.gz'), 'rb') as fileobj:
-            value = opener.open_as_gzip(fileobj)
+            value = open_archive.open_as_gzip(fileobj)
             self.assertIsInstance(value, GzipFile)
 
     def test_open_as_gzip_with_non_gzip_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.zip'), 'rb') as fileobj:
-            value = opener.open_as_gzip(fileobj)
+            value = open_archive.open_as_gzip(fileobj)
             self.assertIsNone(value)
 
     # xz
     def test_open_as_lzma_with_lzma_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.xz'), 'rb') as fileobj:
-            value = opener.open_as_lzma(fileobj)
+            value = open_archive.open_as_lzma(fileobj)
             self.assertIsInstance(value, LZMAFile)
 
     def test_open_as_lzma_with_lzma_tar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.xz'), 'rb') as fileobj:
-            value = opener.open_as_lzma(fileobj)
+            value = open_archive.open_as_lzma(fileobj)
             self.assertIsInstance(value, LZMAFile)
 
     def test_open_as_lzma_with_non_lzma_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.zip'), 'rb') as fileobj:
-            value = opener.open_as_lzma(fileobj)
+            value = open_archive.open_as_lzma(fileobj)
             self.assertIsNone(value)
 
     # 7z
     def test_open_as_7z_with_7z_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.7z'), 'rb') as fileobj:
-            value = opener.open_as_7z(fileobj)
+            value = open_archive.open_as_7z(fileobj)
             self.assertIsInstance(value, SevenZipFile)
 
     def test_open_as_7z_with_7z_tar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.7z'), 'rb') as fileobj:
-            value = opener.open_as_7z(fileobj)
+            value = open_archive.open_as_7z(fileobj)
             self.assertIsInstance(value, SevenZipFile)
 
     def test_open_as_7z_with_non_7z_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.zip'), 'rb') as fileobj:
-            value = opener.open_as_7z(fileobj)
+            value = open_archive.open_as_7z(fileobj)
             self.assertIsNone(value)
 
     # tar.7z
     def test_open_as_tar_7z_with_tar_7z_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.tar.7z'), 'rb') as fileobj:
-            value = opener.open_as_tar_7z(fileobj)
+            value = open_archive.open_as_tar_7z(fileobj)
             self.assertIsInstance(value, TarFile)
 
     def test_open_as_tar_7z_with_7z_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.7z'), 'rb') as fileobj:
-            value = opener.open_as_tar_7z(fileobj)
+            value = open_archive.open_as_tar_7z(fileobj)
             self.assertIsNone(value)
 
     def test_open_as_tar_7z_with_non_7z_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.zip'), 'rb') as fileobj:
-            value = opener.open_as_tar_7z(fileobj)
+            value = open_archive.open_as_tar_7z(fileobj)
             self.assertIsNone(value)
 
     # rar
     def test_open_as_rar_with_rar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.rar'), 'rb') as fileobj:
-            value = opener.open_as_rar(fileobj)
+            value = open_archive.open_as_rar(fileobj)
             self.assertIsInstance(value, RarFile)
 
     def test_open_as_rar_with_non_rar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.bz2'), 'rb') as fileobj:
-            value = opener.open_as_rar(fileobj)
+            value = open_archive.open_as_rar(fileobj)
             self.assertIsNone(value)
 
     # lha
     def test_open_as_rar_with_rar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.lha'), 'rb') as fileobj:
-            value = opener.open_as_lha(fileobj)
+            value = open_archive.open_as_lha(fileobj)
             self.assertIsInstance(value, LhaFile)
 
     def test_open_as_rar_with_non_rar_file(self):
         with open(os.path.join(FIXTURES_DIR, 'file.txt.bz2'), 'rb') as fileobj:
-            value = opener.open_as_lha(fileobj)
+            value = open_archive.open_as_lha(fileobj)
             self.assertIsNone(value)
 
 class TestOpenerGeneralFuncs(unittest.TestCase):
 
     def test_open_with_zip_file(self):
         path = pathlib.Path(os.path.join(FIXTURES_DIR, 'file.txt.zip'))
-        self.assertIsInstance(opener.open_archive(path), ZipFile)
+        self.assertIsInstance(open_archive.open_archive(path), ZipFile)

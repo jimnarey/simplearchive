@@ -14,13 +14,13 @@ import py7zr
 import rarfile
 import lhafile
 
-import archive.archive_types as at
+from custom_types.io import ArchiveIO, CompressionIO
 
 
 class ArchiveWrapper(ABC):
 
     @abstractmethod
-    def __init__(self, archive_obj: at.ArchiveIO, path: Path) -> None:
+    def __init__(self, archive_obj: ArchiveIO, path: Path) -> None:
         pass
 
     @abstractmethod
@@ -219,7 +219,7 @@ class LhaArchiveWrapper(ArchiveWrapper):
 
 class FileUnAwareArchiveWrapper(ArchiveWrapper):
 
-    def __init__(self, archive_obj: at.BuiltInFileUnAwareArchiveIO, path: Path) -> None:
+    def __init__(self, archive_obj: CompressionIO, path: Path) -> None:
         self.archive_obj = archive_obj
         self.path = path
 

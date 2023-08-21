@@ -12,7 +12,7 @@ import py7zr
 import rarfile
 import lhafile
 
-import archive.archive_types as at
+from custom_types.io import ArchiveIO, CompressionIO
 
 
 def open_as_zip(fileobj: IO[bytes]) -> Optional[zipfile.ZipFile]:
@@ -128,7 +128,7 @@ def get_open_func_by_ext(path: pathlib.Path) -> Optional[Callable]:
     return None
 
 
-def open_archive(path: pathlib.Path) -> Optional[at.ArchiveIO]:
+def open_archive(path: pathlib.Path) -> Optional[ArchiveIO]:
     open_funcs = OPEN_FUNCS
     with open(path, 'rb') as fileobj:
         ext_open_func = get_open_func_by_ext(path)
